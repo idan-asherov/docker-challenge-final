@@ -21,8 +21,8 @@ app.use(express.static(path.join(__dirname, "public")));
 // Backend API Routes
 app.use("/api/users", usersRoutes);
 
-// Express 5 Safe Catch-All Route: (.*) instead of *
-app.get("(.*)", (req, res, next) => {
+// Express 5 Safe Catch-All Middleware pattern (no path string needed)
+app.use((req, res, next) => {
   if (req.path.startsWith("/api")) return next();
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
