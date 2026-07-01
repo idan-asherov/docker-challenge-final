@@ -1,0 +1,20 @@
+{
+  "name": "docker-challenge-final",
+  "version": "1.0.0",
+  "description": "Node Server - Clean and Correct Architecture",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "loadusers": "node src/load-users.js"
+  },
+  "author": "Idan",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.6.3",
+    "nodemon": "^3.1.14"
+  }
+}
