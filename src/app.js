@@ -4,12 +4,13 @@ const mongoose = require("mongoose");
 const path = require("path");
 const fs = require("fs");
 
-// Load Environment Configuration
+// Load Environment Configuration safely
 const productionEnvPath = path.join(__dirname, "..", ".env.production");
 if (fs.existsSync(productionEnvPath)) {
   require("dotenv").config({ path: productionEnvPath });
   console.log("📥 Successfully loaded variables from .env.production");
 } else {
+  // Gracefully falls back to ambient system injection profiles (Render Dashboard Panel settings)
   require("dotenv").config();
 }
 
@@ -23,10 +24,10 @@ class App {
       `⚙️ Express Internal Engine Mode configured to: ${this.app.get("env")}`,
     );
 
-    // Dynamic Port fallback
+    // Render automatically assigns its own custom PORT dynamically. We must bind to it!
     this.port = process.env.PORT || 5501;
 
-    // Allowed Origins Matrix (CORS Whitelist matching teacher's includes setup)
+    // Allowed Origins Matrix (CORS Whitelist)
     this.allowedOrigins = [
       "http://localhost:3000",
       "http://localhost:5500",
@@ -47,20 +48,20 @@ class App {
 
   // Database Connection Layer
   async connectToDatabase() {
-    let fallbackLocal =
-      process.env.LOCAL_DB || "mongodb://127.0.0.1:27017/docker-challenge";
+    // 🚨 Dynamic production cluster connection builder using Render credentials
+    let mongoUri = process.env.MONGO_URI;
 
-    if (process.env.IS_DOCKER === "true" || fs.existsSync("/.dockerenv")) {
-      fallbackLocal = "mongodb://db:27017/docker-challenge";
+    if (!mongoUri && process.env.DB_USER && process.env.DB_PASSWORD) {
+      mongoUri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.mongodb.net/${process.env.DB_NAME || "docker-challenge"}?retryWrites=true&w=majority`;
     }
 
-    const mongoUri = process.env.RENDER ? process.env.MONGO_URI : fallbackLocal;
-
+    // Local execution fallback routes if running machine builds outside Render cloud ecosystem
     if (!mongoUri) {
-      console.error(
-        "❌ CRITICAL ERROR: Database URI configuration is completely missing.",
-      );
-      process.exit(1);
+      mongoUri =
+        process.env.LOCAL_DB || "mongodb://127.0.0.1:27017/docker-challenge";
+      if (process.env.IS_DOCKER === "true" || fs.existsSync("/.dockerenv")) {
+        mongoUri = "mongodb://db:27017/docker-challenge";
+      }
     }
 
     try {
@@ -112,11 +113,6 @@ class App {
 
   // Valid Application Routes Mapping
   initializeRoutes() {
-    // Root welcome endpoint matching teacher's screenshot
-    this.app.get("/", (req, res) => {
-      res.send("Welcome to our users management app 👩‍💻");
-    });
-
     // Advanced Health Check Endpoint with environment logging
     this.app.get("/api/health", (req, res) => {
       const dbStates = [
@@ -135,12 +131,11 @@ class App {
       });
     });
 
-    // 🔌 Bulletproof Route Loader Step
+    // Bulletproof Route Loader Step
     const routerPath = path.join(__dirname, "routes", "users.js");
 
     if (fs.existsSync(routerPath)) {
       const usersRoutes = require(routerPath);
-      // Safety gate: ensures the imported file actually contains a valid router function export
       if (
         usersRoutes &&
         (typeof usersRoutes === "function" ||
@@ -169,14 +164,7 @@ class App {
 
   // Fallback & Error Handling Middlewares
   initializeErrorHandling() {
-    this.app.use((req, res, next) => {
-      const error = new Error(
-        `The requested path ${req.originalUrl} was not found on this server.`,
-      );
-      error.statusCode = 404;
-      next(error);
-    });
-
+    // Central Error Handler
     this.app.use((err, req, res, next) => {
       const statusCode = err.statusCode || 500;
       const message = err.message || "Internal Server Error";
