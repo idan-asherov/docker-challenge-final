@@ -35,7 +35,7 @@ class App {
     // Priority 1: Render Cloud Connection String
     let mongoUri = process.env.MONGO_URI;
 
-    // Priority 2: Reconstruct cluster URL from individual environment tokens if applicable
+    // Priority 2: Reconstruct cluster URL from individual tokens if needed
     if (!mongoUri && process.env.DB_USER && process.env.DB_PASSWORD) {
       mongoUri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.mongodb.net/${process.env.DB_NAME || "docker-challenge"}?retryWrites=true&w=majority`;
     }
@@ -49,7 +49,7 @@ class App {
       }
     }
 
-    // Fail-fast gate for JWT_SECRET before binding DB connection threads
+    // Fail-fast gate for JWT_SECRET
     if (!process.env.JWT_SECRET) {
       console.error(
         "❌ CRITICAL ERROR: JWT_SECRET is not defined in environment variables.",
@@ -95,8 +95,13 @@ class App {
   }
 
   initializeRoutes() {
-    // Health Check Endpoint
-    this.app.get("/api/health", (req, res) => {
+    // Root welcome fallback route path matching teacher code requirements
+    this.app.get("/", (req, res) => {
+      res.send("Welcome to our users management app 👩‍💻");
+    });
+
+    // Dynamic health check handler reusable structure
+    const healthHandler = (req, res) => {
       const dbStates = [
         "connected",
         "disconnected",
@@ -111,12 +116,10 @@ class App {
         runtime: `${Math.floor(process.uptime())}s`,
         environment: this.app.get("env"),
       });
-    });
+    };
 
-    // Root welcome fallback route path matching teacher code requirements
-    this.app.get("/", (req, res) => {
-      res.send("Welcome to our users management app 👩‍💻");
-    });
+    this.app.get("/health", healthHandler);
+    this.app.get("/api/health", healthHandler);
 
     // Absolute safe path loading execution line
     const routerPath = path.join(__dirname, "routes", "users.js");
