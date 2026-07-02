@@ -3,94 +3,90 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Docker Challenge - User Management Engine</title>
-    <style>
-      body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        background-color: #f4f7f6;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-      }
-      .container {
-        text-align: center;
-        background: white;
-        padding: 40px;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        max-width: 450px;
-        width: 100%;
-      }
-      h1 {
-        color: #111;
-        font-size: 24px;
-        margin-bottom: 8px;
-      }
-      p {
-        color: #666;
-        font-size: 14px;
-        margin-bottom: 24px;
-      }
-      .card {
-        margin-top: 20px;
-        padding: 20px;
-        background: #fafafa;
-        border-radius: 12px;
-        border: 1px solid #eaeaea;
-        text-align: left;
-      }
-      .card h3 {
-        margin-top: 0;
-        color: #333;
-        font-size: 16px;
-      }
-      button {
-        background: #0070f3;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 500;
-        width: 100%;
-        transition: background 0.2s ease;
-      }
-      button:hover {
-        background: #0051cb;
-      }
-      pre {
-        background: #1e1e1e;
-        color: #39ff14;
-        padding: 14px;
-        border-radius: 8px;
-        font-family:
-          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-        font-size: 12px;
-        overflow-x: auto;
-        margin-top: 12px;
-        border: 1px solid #333;
-      }
-    </style>
+    <title>User Management Control Center</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <div class="container">
-      <h1>Users Management App 👩‍💻</h1>
-      <p>
-        The static file server is active and serving assets from the root
-        layout.
-      </p>
+    <div class="dashboard-layout">
+      <aside class="sidebar">
+        <h2>Engine Ops</h2>
+        <div class="system-card">
+          <h3>Server Health</h3>
+          <button id="checkHealthBtn" class="btn-secondary">
+            Run API Diagnostics
+          </button>
+          <div id="healthBadge" class="badge">Status Unknown</div>
+          <pre id="healthResponse">Diagnostics clear...</pre>
+        </div>
+      </aside>
 
-      <div class="card">
-        <h3>System Diagnostics Loop</h3>
-        <button id="checkHealthBtn">Query API Diagnostics</button>
-        <pre id="healthResponse">Click the button to query /api/health ...</pre>
-      </div>
+      <main class="main-content">
+        <header class="workspace-header">
+          <h1>User Management Dashboard</h1>
+          <p>
+            Manage and audit your persistent live MongoDB collection records
+            securely.
+          </p>
+        </header>
+
+        <div class="workspace-grid">
+          <section class="card form-card">
+            <h3>Register New User Profile</h3>
+            <form id="createUserForm">
+              <div class="form-group">
+                <label for="usernameInput">Username</label>
+                <input
+                  type="text"
+                  id="usernameInput"
+                  required
+                  placeholder="e.g., idan_asherov"
+                />
+              </div>
+              <div class="form-group">
+                <label for="emailInput">Email Address</label>
+                <input
+                  type="email"
+                  id="emailInput"
+                  required
+                  placeholder="name@domain.com"
+                />
+              </div>
+              <button type="submit" class="btn-primary">
+                Generate User Account
+              </button>
+            </form>
+            <div id="formFeedback" class="feedback-message"></div>
+          </section>
+
+          <section class="card list-card">
+            <div class="list-header">
+              <h3>Active MongoDB Collections</h3>
+              <button id="refreshUsersBtn" class="btn-refresh">
+                🔄 Refresh Directory
+              </button>
+            </div>
+            <div class="users-table-wrapper">
+              <table class="users-table">
+                <thead>
+                  <tr>
+                    <th>Username</th>
+                    <th>Email Signature</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <tr>
+                    <td colspan="3" class="table-empty">
+                      Click Refresh Directory to fetch accounts...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
-
     <script src="api.js"></script>
   </body>
 </html>

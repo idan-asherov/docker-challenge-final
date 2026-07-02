@@ -1,183 +1,117 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const path = require("path");
-const fs = require("fs");
+// Application Operations Orchestration Script
+document.addEventListener("DOMContentLoaded", () => {
+  // Component Event Declarations
+  const checkHealthBtn = document.getElementById("checkHealthBtn");
+  const healthResponse = document.getElementById("healthResponse");
+  const healthBadge = document.getElementById("healthBadge");
 
-// Load Environment Configuration
-const productionEnvPath = path.join(__dirname, "..", ".env.production");
-if (fs.existsSync(productionEnvPath)) {
-  require("dotenv").config({ path: productionEnvPath });
-  console.log("📥 Successfully loaded variables from .env.production");
-} else {
-  require("dotenv").config();
-}
+  const createUserForm = document.getElementById("createUserForm");
+  const usernameInput = document.getElementById("usernameInput");
+  const emailInput = document.getElementById("emailInput");
+  const formFeedback = document.getElementById("formFeedback");
 
-class App {
-  constructor() {
-    this.app = express();
+  const refreshUsersBtn = document.getElementById("refreshUsersBtn");
+  const usersTableBody = document.getElementById("usersTableBody");
 
-    // Environment Sync setting
-    this.app.set("env", process.env.NODE_ENV || "development");
-    console.log(
-      `⚙️ Express Internal Engine Mode configured to: ${this.app.get("env")}`,
-    );
+  // 📡 Operations Logic: Run API Engine Diagnostics
+  checkHealthBtn.addEventListener("click", async () => {
+    healthResponse.textContent = "Querying live core status...";
+    try {
+      const response = await fetch("/api/health");
+      const data = await response.json();
 
-    // Dynamic Port fallback
-    this.port = process.env.PORT || 5501;
+      healthResponse.textContent = JSON.stringify(data, null, 2);
 
-    // Allowed Origins Matrix (CORS Whitelist)
-    this.allowedOrigins = [
-      "http://localhost:3000",
-      "http://localhost:5500",
-      "http://localhost:5501",
-      "http://127.0.0.1:5500",
-      "http://127.0.0.1:5501",
-    ];
-
-    this.connectToDatabase();
-    this.initializeMiddlewares();
-    this.initializeRoutes();
-    this.initializeStaticServing(); // 📁 Your teacher's exact asset serving implementation
-    this.initializeErrorHandling();
-  }
-
-  // Database Connection Layer
-  async connectToDatabase() {
-    let fallbackLocal =
-      process.env.LOCAL_DB || "mongodb://127.0.0.1:27017/docker-challenge";
-
-    if (process.env.IS_DOCKER === "true" || fs.existsSync("/.dockerenv")) {
-      fallbackLocal = "mongodb://db:27017/docker-challenge";
+      if (response.ok && data.status === "ok") {
+        healthBadge.textContent = `Live: Mode [${data.environment}]`;
+        healthBadge.className = "badge healthy";
+      } else {
+        healthBadge.textContent = "Service Degraded";
+        healthBadge.className = "badge unhealthy";
+      }
+    } catch (error) {
+      healthResponse.textContent = `Connection Failure: ${error.message}`;
+      healthBadge.textContent = "Offline Check Alert";
+      healthBadge.className = "badge unhealthy";
     }
+  });
 
-    const mongoUri = process.env.RENDER ? process.env.MONGO_URI : fallbackLocal;
+  // 🔄 Operations Logic: Fetch and Display Users from MongoDB
+  const fetchUserDirectory = async () => {
+    usersTableBody.innerHTML = `<tr><td colspan="3" class="table-empty">Querying database engine cluster...</td></tr>`;
+    try {
+      const response = await fetch("/api/users");
+      const users = await response.json();
 
-    if (!mongoUri) {
-      console.error(
-        "❌ CRITICAL ERROR: Database URI configuration is completely missing.",
-      );
-      process.exit(1);
+      if (!Array.isArray(users) || users.length === 0) {
+        usersTableBody.innerHTML = `<tr><td colspan="3" class="table-empty">No active user collections found. Create one!</td></tr>`;
+        return;
+      }
+
+      usersTableBody.innerHTML = users
+        .map(
+          (user) => `
+                <tr>
+                    <td><strong>${escapeHtml(user.username)}</strong></td>
+                    <td>${escapeHtml(user.email || "N/A")}</td>
+                    <td><span style="color:#10b981; font-weight:600;">● Active</span></td>
+                </tr>
+            `,
+        )
+        .join("");
+    } catch (error) {
+      usersTableBody.innerHTML = `<tr><td colspan="3" class="table-empty" style="color:#ef4444;">Failed to read collection: ${error.message}</td></tr>`;
     }
+  };
+
+  // ➕ Operations Logic: Register a New User Account
+  createUserForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    formFeedback.textContent = "Transmitting profile payload...";
+    formFeedback.style.color = "#2563eb";
+
+    const payload = {
+      username: usernameInput.value,
+      email: emailInput.value,
+    };
 
     try {
-      console.log(
-        process.env.RENDER
-          ? "☁️ Connecting to Render Cloud DB..."
-          : "🐋 Connecting to Local MongoDB...",
-      );
-      await mongoose.connect(mongoUri);
-      console.log("📶 Clean connection established to MongoDB.");
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        formFeedback.textContent = "✅ User collection written successfully!";
+        formFeedback.style.color = "#10b981";
+        createUserForm.reset();
+        fetchUserDirectory(); // Instantly refresh table data grid view
+      } else {
+        formFeedback.textContent = `❌ Write Error: ${result.message || "Validation rejected"}`;
+        formFeedback.style.color = "#ef4444";
+      }
     } catch (error) {
-      console.error("❌ Database connection failure:", error.message);
-      process.exit(1);
+      formFeedback.textContent = `❌ Network Error: ${error.message}`;
+      formFeedback.style.color = "#ef4444";
     }
+  });
+
+  // Wire up explicit click triggers and self-load on boot
+  refreshUsersBtn.addEventListener("click", fetchUserDirectory);
+  fetchUserDirectory();
+
+  // Helper sanitization logic to clean up text injections
+  function escapeHtml(str) {
+    if (!str) return "";
+    return str
+      .toString()
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
-
-  // Input Middlewares
-  initializeMiddlewares() {
-    this.app.use(
-      cors({
-        origin: (origin, callback) => {
-          if (!origin) return callback(null, true);
-          if (this.allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-          } else {
-            callback(
-              new Error(`Security Alert: Origin ${origin} blocked by CORS.`),
-            );
-          }
-        },
-        credentials: true,
-      }),
-    );
-
-    // Custom Request Logger Middleware
-    this.app.use((req, res, next) => {
-      console.log(`📡 [Incoming Request]: ${req.method} ${req.url}`);
-      next();
-    });
-
-    this.app.use(express.json());
-    this.app.use(express.urlencoded({ extended: true }));
-  }
-
-  // Valid Application Routes Mapping
-  initializeRoutes() {
-    // Advanced Health Check Endpoint with environment logging
-    this.app.get("/api/health", (req, res) => {
-      const dbStates = [
-        "connected",
-        "disconnected",
-        "connecting",
-        "disconnecting",
-      ];
-      const dbConnected = mongoose.connection.readyState === 1;
-
-      res.status(dbConnected ? 200 : 503).json({
-        status: dbConnected ? "ok" : "error",
-        db: dbStates[mongoose.connection.readyState] || "unknown",
-        runtime: `${Math.floor(process.uptime())}s`,
-        environment: process.env.NODE_ENV || "development",
-      });
-    });
-
-    // Clean mount looking for your file path configuration: src/routes/users.js
-    const routerPath = path.join(__dirname, "routes", "users.js");
-    if (fs.existsSync(routerPath)) {
-      this.app.use("/api/users", require(routerPath));
-      console.log("🔌 User routes successfully mounted at /api/users");
-    } else {
-      console.warn(
-        `⚠️ Warning: Expected router file not found at ${routerPath}`,
-      );
-    }
-  }
-
-  // 🌟 Your Teacher's Precise static serving logic integrated cleanly
-  initializeStaticServing() {
-    // Safe reference: matches exactly your teacher's 'path.join' line strategy
-    const resolvedPath = path.join(__dirname, "..", "public");
-
-    this.app.use(express.static(resolvedPath));
-    console.log(
-      `📁 Static files engine serving directory asset files from: ${resolvedPath}`,
-    );
-  }
-
-  // Fallback & Error Handling Middlewares
-  initializeErrorHandling() {
-    this.app.use((req, res, next) => {
-      const error = new Error(
-        `The requested path ${req.originalUrl} was not found on this server.`,
-      );
-      error.statusCode = 404;
-      next(error);
-    });
-
-    this.app.use((err, req, res, next) => {
-      const statusCode = err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-
-      console.error(`💥 [Error Handler Log]: ${message}`);
-
-      res.status(statusCode).json({
-        success: false,
-        status: statusCode,
-        message: message,
-        stack: this.app.get("env") === "production" ? "🥞" : err.stack,
-      });
-    });
-  }
-
-  // Boot Engine
-  listen() {
-    this.app.listen(this.port, () => {
-      console.log(`🚀 server running on port: ${this.port}`);
-    });
-  }
-}
-
-// Instantiate and start the server application
-const server = new App();
-server.listen();
+});
