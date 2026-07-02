@@ -26,7 +26,7 @@ class App {
     // Dynamic Port fallback
     this.port = process.env.PORT || 5501;
 
-    // Allowed Origins Matrix (CORS Whitelist)
+    // Allowed Origins Matrix (CORS Whitelist matching teacher's includes setup)
     this.allowedOrigins = [
       "http://localhost:3000",
       "http://localhost:5500",
@@ -34,11 +34,14 @@ class App {
       "http://127.0.0.1:5500",
       "http://127.0.0.1:5501",
     ];
+    if (process.env.RENDER_EXTERNAL_URL) {
+      this.allowedOrigins.push(process.env.RENDER_EXTERNAL_URL);
+    }
 
     this.connectToDatabase();
     this.initializeMiddlewares();
     this.initializeRoutes();
-    this.initializeStaticServing(); // 📁 Your teacher's exact asset serving implementation
+    this.initializeStaticServing();
     this.initializeErrorHandling();
   }
 
@@ -72,6 +75,14 @@ class App {
       console.error("❌ Database connection failure:", error.message);
       process.exit(1);
     }
+
+    // Strict Fail-Fast Security Check for JWT_SECRET
+    if (!process.env.JWT_SECRET) {
+      console.error(
+        "❌ CRITICAL ERROR: JWT_SECRET is not defined in environment variables.",
+      );
+      process.exit(1);
+    }
   }
 
   // Input Middlewares
@@ -79,13 +90,10 @@ class App {
     this.app.use(
       cors({
         origin: (origin, callback) => {
-          if (!origin) return callback(null, true);
-          if (this.allowedOrigins.indexOf(origin) !== -1) {
+          if (!origin || this.allowedOrigins.includes(origin)) {
             callback(null, true);
           } else {
-            callback(
-              new Error(`Security Alert: Origin ${origin} blocked by CORS.`),
-            );
+            callback(new Error("Not allowed by CORS policies"));
           }
         },
         credentials: true,
@@ -104,6 +112,11 @@ class App {
 
   // Valid Application Routes Mapping
   initializeRoutes() {
+    // Root welcome endpoint matching teacher's screenshot
+    this.app.get("/", (req, res) => {
+      res.send("Welcome to our users management app 👩‍💻");
+    });
+
     // Advanced Health Check Endpoint with environment logging
     this.app.get("/api/health", (req, res) => {
       const dbStates = [
@@ -122,11 +135,24 @@ class App {
       });
     });
 
-    // Clean mount looking for your file path configuration: src/routes/users.js
+    // 🔌 Bulletproof Route Loader Step
     const routerPath = path.join(__dirname, "routes", "users.js");
+
     if (fs.existsSync(routerPath)) {
-      this.app.use("/api/users", require(routerPath));
-      console.log("🔌 User routes successfully mounted at /api/users");
+      const usersRoutes = require(routerPath);
+      // Safety gate: ensures the imported file actually contains a valid router function export
+      if (
+        usersRoutes &&
+        (typeof usersRoutes === "function" ||
+          typeof usersRoutes.use === "function")
+      ) {
+        this.app.use("/api/users", usersRoutes);
+        console.log("🔌 User routes successfully mounted at /api/users");
+      } else {
+        console.error(
+          `❌ Error: ${routerPath} did not export a valid Express Router instance.`,
+        );
+      }
     } else {
       console.warn(
         `⚠️ Warning: Expected router file not found at ${routerPath}`,
@@ -134,15 +160,11 @@ class App {
     }
   }
 
-  // 🌟 Your Teacher's Precise static serving logic integrated cleanly
+  // Static serving logic
   initializeStaticServing() {
-    // Safe reference: matches exactly your teacher's 'path.join' line strategy
     const resolvedPath = path.join(__dirname, "..", "public");
-
     this.app.use(express.static(resolvedPath));
-    console.log(
-      `📁 Static files engine serving directory asset files from: ${resolvedPath}`,
-    );
+    console.log(`📁 Static files serving from: ${resolvedPath}`);
   }
 
   // Fallback & Error Handling Middlewares
