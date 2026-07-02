@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docker Challenge - User Management Engine</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background-color: #f4f7f6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .container {
+        text-align: center;
+        background: white;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        max-width: 450px;
+        width: 100%;
+      }
+      h1 {
+        color: #111;
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+      p {
+        color: #666;
+        font-size: 14px;
+        margin-bottom: 24px;
+      }
+      .card {
+        margin-top: 20px;
+        padding: 20px;
+        background: #fafafa;
+        border-radius: 12px;
+        border: 1px solid #eaeaea;
+        text-align: left;
+      }
+      .card h3 {
+        margin-top: 0;
+        color: #333;
+        font-size: 16px;
+      }
+      button {
+        background: #0070f3;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        width: 100%;
+        transition: background 0.2s ease;
+      }
+      button:hover {
+        background: #0051cb;
+      }
+      pre {
+        background: #1e1e1e;
+        color: #39ff14;
+        padding: 14px;
+        border-radius: 8px;
+        font-family:
+          "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+        font-size: 12px;
+        overflow-x: auto;
+        margin-top: 12px;
+        border: 1px solid #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Users Management App 👩‍💻</h1>
+      <p>
+        The static file server is active and serving assets from the root
+        layout.
+      </p>
+
+      <div class="card">
+        <h3>System Diagnostics Loop</h3>
+        <button id="checkHealthBtn">Query API Diagnostics</button>
+        <pre id="healthResponse">Click the button to query /api/health ...</pre>
+      </div>
+    </div>
+
+    <script src="api.js"></script>
+  </body>
+</html>
