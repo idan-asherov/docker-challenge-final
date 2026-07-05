@@ -1,23 +1,29 @@
 const User = require("../model/User");
 
-// Get all users from the database
-exports.getUsers = async (req, res) => {
+// 🔍 READ: Fetch all user documents inside the collection
+exports.getUsers = async (req, res, next) => {
   try {
-    const users = await User.find();
+    const users = await User.find().sort({ createdAt: -1 });
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    next(error);
   }
 };
 
-// Create and save a new user
-exports.createUser = async (req, res) => {
-  const { name, email } = req.body;
+// ➕ CREATE: Write a new user document profile record into the cluster
+exports.createUser = async (req, res, next) => {
   try {
-    const newUser = new User({ name, email });
-    await newUser.save();
+    const { username, email } = req.body;
+
+    if (!username || !email) {
+      return res
+        .status(400)
+        .json({ message: "Username and email fields are strictly required." });
+    }
+
+    const newUser = await User.create({ username, email });
     res.status(201).json(newUser);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    next(error);
   }
 };
