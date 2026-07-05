@@ -1,4 +1,8 @@
 node_modules
+.gitignore
+.env
 npm-debug.log
 .git
 .DS_Store
+.dockerignore
+.re

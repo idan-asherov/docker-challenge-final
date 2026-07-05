@@ -1,15 +1,17 @@
-version: '3.8'
-
 services:
   web:
-    build: .
+    build: 
+      context: .
+      target: production
     ports:
       - "3000:3000"
     environment:
       PORT: 3000
       MONGO_URI: mongodb://db:27017/docker-challenge
+      JWT_SECRET: "my_super_secret_key_for_dev" # המשתנה שפותר את הקריסה
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: mongo:6.0
@@ -17,6 +19,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
 volumes:
   mongo-data:
