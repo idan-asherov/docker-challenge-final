@@ -1,0 +1,10 @@
+services:
+  web:
+    build:
+      context: .
+      target: development # אומר לדוקר לעצור בשלב הפיתוח (עם nodemon) ולא להמשיך לפרודקשן
+    volumes:
+      - .:/usr/src/app # ה-Bind Mount: מחבר את התיקייה הנוכחית במחשב לתוך הקונטיינר
+      - /usr/src/app/node_modules # אנונימי: מונע מהמחשב שלך לדרוס את ה-node_modules הייעודיים של הלינוקס בקונטיינר
+    environment:
+      NODE_ENV: development
